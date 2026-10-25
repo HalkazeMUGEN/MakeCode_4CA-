@@ -6,12 +6,16 @@ Const MODE_MANUAL = 0
 Const MODE_INPUT = 1
 Const TYPE_4CA = 0
 Const TYPE_RETRET = 1
+Const TYPE_NONE = -1
 
 Dim mode
 Dim codetype: codetype = TYPE_4CA
-Dim out: out = "code.st"
 Dim cnt: cnt = 1024
 Dim textlen: textlen = 0
+Dim input: input = ""
+Dim out: out = "code.st"
+Dim editor: editor = ""
+Dim strict: strict = TYPE_NONE
 
 Dim text(255)
 Dim p(): ReDim p(0): p(0) = 0
@@ -19,66 +23,36 @@ Dim p(): ReDim p(0): p(0) = 0
 Dim fso: Set fso = CreateObject("Scripting.FileSystemObject")
 Dim args: Set args = WScript.Arguments
 
-If args.Count >= 2 Then
-	If fso.FileExists(args(0)) Then
-		out = "./" & args(1)
-		inputFile()
-	Else
-		manual()
+
+
+
+Dim i
+For i = 0 To args.Count - 1
+	If InStr(1, args(i), "-in=") = 1 Then
+		input = getInputFile(i)
+	ElseIf InStr(1, args(i), "-o=", 1) = 1 Or InStr(1, args(i), "-out=", 1) = 1 Then
+		out = getOutputFile(i)
+	ElseIf InStr(1, args(i), "-e=", 1) = 1 Or InStr(1, args(i), "-editor=", 1) = 1 Then
+		editor = getEditor(i)
+	ElseIf InStr(1, args(i), "-c=", 1) = 1 Or InStr(1, args(i), "-code=", 1) = 1 Then
+		strict = getStrict(i)
 	End If
+Next
+If strict = TYPE_RETRET Then
+	changeToRETRET()
+End If
+If Len(input) > 0 Then
+	Call inputFile()
 Else
-	manual()
+	Call manual()
 End If
 
 
 
 
-Sub writeToOut()
-	If codetype = TYPE_4CA Then
-		If textlen + 15 > 255 Then
-			errorTooLongCode()
-		End If
-	Else
-		If textlen + 27 > 255 Then
-			errorTooLongCode()
-		End If
-	End If
-	Dim file: Set file = fso.OpenTextFile(out, 2, True)
-	file.WriteLine("[State CODE]")
-	file.WriteLine("type=DisplayToClipboard")
-	file.WriteLine("trigger1=1")
-	file.Write("text=""")
-	file.Close
-	Call BinaryWrite(out, text, textlen)
-	Set file = fso.OpenTextFile(out, 8, True)
-	Dim n: n = UBound(p)
-	If codetype = TYPE_4CA Then
-		file.WriteLine("%" & cnt & "d4CA""")
-	Else
-		file.Write("%" & cnt & "d55@%c")
-		file.Close
-		Call BinaryWrite(out, Array(&HB8, &HFC, &HEF, &HFF, &HFF, &H03, &HC4, &HFF, &HE0), 9)
-		Set file = fso.OpenTextFile(out, 8, True)
-		file.WriteLine("""")
-		n = n + 1
-	End If
-	Dim params: params = ""
-	Dim i
-	For i = 0 To n - 1
-		params = params & p(i) & ","
-	Next
-	params = params & 0
-	file.WriteLine("params=" & params)
-	file.WriteLine("persistent=256")
-	file.WriteLine("ignorehitpause=1")
-	file.Close
-	myExit()
-End Sub
-
-
 Sub inputFile()
 	mode = MODE_INPUT
-	Dim file: Set file = fso.OpenTextFile(args(0))
+	Dim file: Set file = fso.OpenTextFile(input)
 	Dim line
 	Dim arr
 	Do Until file.AtEndOfStream
@@ -115,6 +89,49 @@ Sub manual()
 		Next
 	Loop
 	writeToOut()
+End Sub
+
+
+Sub writeToOut()
+	If codetype = TYPE_4CA Then
+		If textlen + 15 > 255 Then
+			errorTooLongCode()
+		End If
+	Else
+		If textlen + 28 > 255 Then
+			errorTooLongCode()
+		End If
+	End If
+	Dim file: Set file = fso.OpenTextFile(out, 2, True)
+	file.WriteLine("[State CODE]")
+	file.WriteLine("type=DisplayToClipboard")
+	file.WriteLine("trigger1=1")
+	file.Write("text=""")
+	file.Close
+	Call BinaryWrite(out, text, textlen)
+	Set file = fso.OpenTextFile(out, 8, True)
+	Dim n: n = UBound(p)
+	If codetype = TYPE_4CA Then
+		file.WriteLine("%" & cnt & "d4CA""")
+	Else
+		file.Write("%-" & cnt & "c55@%c")
+		file.Close
+		Call BinaryWrite(out, Array(&HB8, &HFC, &HEF, &HFF, &HFF, &H03, &HC4, &HFF, &HE0), 9)
+		Set file = fso.OpenTextFile(out, 8, True)
+		file.WriteLine("""")
+		n = n + 1
+	End If
+	Dim params: params = ""
+	Dim i
+	For i = 0 To n - 1
+		params = params & p(i) & ","
+	Next
+	params = params & 0
+	file.WriteLine("params=" & params)
+	file.WriteLine("persistent=256")
+	file.WriteLine("ignorehitpause=1")
+	file.Close
+	myExit()
 End Sub
 
 
@@ -158,11 +175,10 @@ End Sub
 
 Sub addParams(ByVal x)
 	Dim n: n = UBound(p) + 1
-	If codetype = TYPE_4CA Then
-		codetype = TYPE_RETRET
-		cnt = cnt + 3072
+	If codetype = TYPE_4CA And strict <> TYPE_4CA Then
+		changeToRETRET()
 	End If
-	If n + 2 > P_MAXIMUM Then
+	If n + 1 - (codetype = TYPE_RETRET) > P_MAXIMUM Then
 		errorTooManyParams()
 	End If
 	p(n-1) = x + 0
@@ -244,12 +260,71 @@ End Sub
 
 Sub myExit()
 	Dim sh: Set sh = WScript.CreateObject("WScript.Shell")
-	If args.Count < 3 Then
+	If Len(editor) > 0 Then
+		Call sh.Run(Chr(34) & editor & Chr(34) & " " & Chr(34) & out & Chr(34), 1, False)
+	Else
 		WScript.Echo "Press any key to Open the made file..."
 		WScript.StdIn.ReadLine
-		Call sh.Run(fso.GetAbsolutePathName(out), 1, False)
-	Else
-		Call sh.Run(Chr(34) & args(2) & Chr(34) & " " & fso.GetAbsolutePathName(out), 1, False)
+		Call sh.Run(Chr(34) & out & Chr(34), 1, False)
 	End If
 	WScript.Quit
 End Sub
+
+
+Sub changeToRETRET()
+	codetype = TYPE_RETRET
+	cnt = cnt + 3072
+End Sub
+
+
+Function getInputFile(ByVal n)
+	If args.Count > n Then
+		Dim s
+		s = Mid(args(n), InStr(1, args(n), "=", 1) + 1)
+		If fso.FileExists(s) Then
+			getInputFile = fso.GetAbsolutePathName(s)
+			Exit Function
+		End If
+	End If
+	getInputFile = ""
+End Function
+
+
+Function getOutputFile(ByVal n)
+	If args.Count <= n Then
+		getOutputFile = "code.st"
+		Exit Function
+	End If
+	Dim s
+	s = "./" & Mid(args(n), InStr(1, args(n), "=", 1) + 1)
+	getOutputFile = fso.GetAbsolutePathName(s)
+End Function
+
+
+Function getEditor(ByVal n)
+	If args.Count > n Then
+		Dim s
+		s = Mid(args(n), InStr(1, args(n), "=", 1) + 1)
+		If fso.FileExists(s) Then
+			getEditor = fso.GetAbsolutePathName(s)
+			Exit Function
+		End If
+	End If
+	getEditor = ""
+End Function
+
+
+Function getStrict(ByVal n)
+	If args.Count > n Then
+		Dim s
+		s = Mid(args(n), InStr(1, args(n), "=", 1) + 1)
+		If StrComp(s, "4CA", 1) = 0 Then
+			getStrict = TYPE_4CA
+			Exit Function
+		ElseIf StrComp(s, "RETRET", 1) = 0 Then
+			getStrict = TYPE_RETRET
+			Exit Function
+		End If
+	End If
+	getStrict = TYPE_NONE
+End Function

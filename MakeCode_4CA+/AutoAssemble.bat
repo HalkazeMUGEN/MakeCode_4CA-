@@ -5,17 +5,33 @@ set in=input.txt
 set out=output.txt
 set code=code.st
 set list=NASM\list.txt
+set strict=NONE
 
 if not exist NASM\nasm.exe (
 	echo ERROR:NO_NASM
 	goto EXIT
 )
 
+for /f "delims=" %%i in (%in%) do (
+	if "%%i"=="@STRICT 4CA" set strict=4CA
+	if "%%i"=="@STRICT RETRET" set strict=RETRET
+	goto END_CHECK_STRICT
+)
+:END_CHECK_STRICT
+
+if not %strict%==NONE (
+	echo %strict%
+)
+
 echo BITS 32>in
 echo section .text>>in
 echo 	global _start>>in
 echo _start:>>in
-type %in%>>in
+if %strict%==NONE (
+	type %in%>>in
+) else (
+	more +1 input.txt>>in
+)
 
 NASM\nasm in -o bin -l %list%
 del in
@@ -39,7 +55,9 @@ if not exist hex goto EXIT
 		echo !text!>>%out%
 	)
 	del hex
-	if exist MakeCode_4CA MakeCode_4CA\MakeCode_4CA.bat %out% %code%
+	if exist MakeCode_4CA (
+		MakeCode_4CA\MakeCode_4CA.bat -code=%strict% -in=%out% -out=%code%
+	)
 	pause
 	exit /B
 

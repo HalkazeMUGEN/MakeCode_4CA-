@@ -53,7 +53,7 @@ RET
 [State CODE]
 type=DisplayToClipboard
 trigger1=1
-text="`������ߋ?�K��1�f�T����<f���<a������h���$�%973d4CA"
+text="`������ߋ?�K��1�f�T����<f���<a������h���$�%973d4CA"
 params=0
 persistent=256
 ignorehitpause=1
@@ -83,7 +83,7 @@ mugenの記述からコードへの値の受け渡しが可能です。
 PUSHAD
 MOV EDI, DWORD [0x4B5B4C]        ;コード中に"%c"を利用できるため、数個までなら0x00などの使用不可文字の使用も許容できる
 XOR ECX, ECX
-MOV CL, 0x21                     ;0x21はparams利用のためのプレースホルダ（※）、後でここにPアドレスを取得する対象スロット番号（0,1,2,...）を埋め込む
+MOV CL, 0x3B                     ;0x3Bはparams利用のためのプレースホルダ（※）、後でここにPアドレスを取得する対象スロット番号（0,1,2,...）を埋め込む
 XOR EDX, EDX
 MOV DX, 0xB754
 LEA EDX, [EDX+ECX*0x4]
@@ -113,7 +113,7 @@ RET
 [State CODE]
 type=DisplayToClipboard
 trigger1=1
-text="`�=L[K%c1ɱ%c1�f�T����<f���<a��_1�^�%4057d55@%c��������"
+text="`�=L[K%c1ɱ%c1�f�T����<f���<a��_1�^�%4057d55@%c��������"
 params=0,33,0,0
 persistent=256
 ignorehitpause=1
