@@ -1,8 +1,25 @@
 ;@STRICT 4CA / @STRICT RETRET 
 ;↑一行目にて「@STRICT 4CA/RETRET」を指定可能です。
-;  詳細はSampleフォルダのExample.txt第5項を参照してください。
+;  詳細はSampleフォルダのTips.txt第5項を参照してください。
 ;
 ;このコメントは消しても問題ありません。
 ;ここにアセンブリ言語（Intel記法）でコードを記述してください。
 
 ;コードの書き方の例はSampleフォルダを参照してください。
+PUSHAD
+MOV EDI, -0x4B5B4C
+NEG EDI
+MOV EDI, DWORD [EDI]
+MOV ECX, DWORD [EBX+0x8]
+AND ECX, 0x1
+XOR EDX, EDX
+MOV DX, 0xB754
+LEA EDX, [EDX+ECX*0x4]
+MOV EDI, DWORD [EDI+EDX]
+MOV DX, 0xFD0
+MOV DWORD [EBX+EDX], EDI
+POPAD
+SUB ESP, -0x410
+PUSH 0xFFB8EC0C
+NOT DWORD [ESP]
+RET

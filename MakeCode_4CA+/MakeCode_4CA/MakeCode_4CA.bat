@@ -112,7 +112,7 @@ Sub writeToOut()
 	Set file = fso.OpenTextFile(out, 8, True)
 	Dim n: n = UBound(p)
 	If codetype = TYPE_4CA Then
-		file.WriteLine("%" & cnt & "d4CA""")
+		file.WriteLine("%%" & cnt & "d4CA""")
 	Else
 		file.Write("%-" & cnt & "c55@%c")
 		file.Close
@@ -123,11 +123,17 @@ Sub writeToOut()
 	End If
 	Dim params: params = ""
 	Dim i
-	For i = 0 To n - 1
-		params = params & p(i) & ","
-	Next
-	params = params & 0
-	file.WriteLine("params=" & params)
+	If n > 0 Then
+		For i = 0 To n - 1
+			params = params & p(i) & ","
+		Next
+		If codetype = TYPE_4CA Then
+			params = Left(params, Len(params) - 1)
+		Else
+			params = params & 0
+		End If
+		file.WriteLine("params=" & params)
+	End If
 	file.WriteLine("persistent=256")
 	file.WriteLine("ignorehitpause=1")
 	file.Close
@@ -153,23 +159,30 @@ Sub mainProc(ByVal n)
 		Case &H00
 			addParams(x)
 		Case &H0A
-			addParams(x)
+			text(textlen) = &H5C
+			text(textlen+1) = &H6E
+			textlen = textlen + 1
 		Case &H1A
 			addParams(x)
 		Case &H22
-			addParams(x)
+			text(textlen) = &H5C
+			text(textlen+1) = &H22
+			textlen = textlen + 1
 		Case &H3B
 			addParams(x)
 		Case &H25
 			text(textlen) = &H25
 			text(textlen+1) = &H25
-			textlen = textlen + 2
-			cnt = cnt - 1
+			textlen = textlen + 1
+		Case &H5C
+			text(textlen) = &H5C
+			text(textlen+1) = &H5C
+			textlen = textlen + 1
 		Case Else
 			text(textlen) = x
-			textlen = textlen + 1
-			cnt = cnt - 1
 	End Select
+	textlen = textlen + 1
+	cnt = cnt - 1
 End Sub
 
 
@@ -186,8 +199,7 @@ Sub addParams(ByVal x)
 	p(n) = 0
 	text(textlen) = &H25
 	text(textlen+1) = &H63
-	textlen = textlen + 2
-	cnt = cnt - 1
+	textlen = textlen + 1
 End Sub
 
 
