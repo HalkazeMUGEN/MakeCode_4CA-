@@ -53,7 +53,7 @@ RET
 [State CODE]
 type=DisplayToClipboard
 trigger1=1
-text="`������ߋ?�K��1�f�T����<f���<a������h���$�%973d4CA"
+text="`������ߋ?�K��1�f�T����<f���<a������h���$�%973d4CA"
 params=0
 persistent=256
 ignorehitpause=1
@@ -91,10 +91,10 @@ MOV EDI, DWORD [EDI+EDX]
 MOV DX, 0xFD0
 MOV DWORD [ESI+EDX], EDI
 POPAD
-ADD ESP, 0x14
-MOV EDI, ESI
-MOV ESI, DWORD [ESP+0x8]
-XOR EAX, EAX
+ADD ESP, 0xC
+POP EDI
+XOR EAX,EAX
+POP ESI
 RET
 
 ※プレースホルダとして使用する文字は、%cを利用して置き換えられる文字であれば何でもよい
@@ -104,7 +104,7 @@ RET
 （上記コードをアセンブルしたもの）
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-60 8B 3D 4C 5B 4B 00 31 C9 B1 21 31 D2 66 BA 54 B7 8D 14 8A 8B 3C 17 66 BA D0 0F 89 3C 16 61 83 C4 14 89 F7 8B 74 24 08 31 C0 C3
+60 8B 3D 4C 5B 4B 00 31 C9 B1 21 31 D2 66 BA 54 B7 8D 14 8A 8B 3C 17 66 BA D0 0F 89 3C 16 61 83 C4 0C 5F 31 C0 5E C3
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ・出力されるRETRET式コード
@@ -113,7 +113,7 @@ RET
 [State CODE]
 type=DisplayToClipboard
 trigger1=1
-text="`�=L[K%c1ɱ%c1�f�T����<f���<a�����t$1��%4053d55@%cf�����D$���"
+text="`�=L[K%c1ɱ%c1�f�T����<f���<a��_1�^�%4057d55@%c��������"
 params=0,33,0,0
 persistent=256
 ignorehitpause=1
